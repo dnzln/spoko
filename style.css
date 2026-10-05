@@ -1,0 +1,303 @@
+/* ==========================================================
+   КПК S.T.A.L.K.E.R. — стили карты
+   ========================================================== */
+
+:root {
+  --pda-bg: rgba(15, 20, 16, 0.88);      /* #0f1410 */
+  --pda-bg-solid: #111d13;
+  --pda-green: #00ff66;
+  --pda-green-dim: #0a7a35;
+  --pda-border: #2a3a2d;
+  --pda-warn: #ffcc00;
+  --pda-font: "Courier New", Courier, monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #000;
+  font-family: var(--pda-font);
+  color: var(--pda-green);
+}
+
+#map {
+  position: absolute;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #050805;
+}
+
+/* Лёгкая "ЭЛТ"-сетка поверх карты для атмосферы КПК */
+#map::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 450;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0,
+    rgba(0, 0, 0, 0) 2px,
+    rgba(0, 0, 0, 0.12) 3px
+  );
+  box-shadow: inset 0 0 120px rgba(0, 0, 0, 0.75);
+}
+
+/* ---------- Кнопки управления ---------- */
+
+.pda-controls {
+  position: fixed;
+  right: 14px;
+  bottom: 40px;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pda-btn {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: var(--pda-bg);
+  color: var(--pda-green);
+  border: 2px solid var(--pda-border);
+  outline: 1px solid rgba(0, 255, 102, 0.25);
+  outline-offset: -5px;
+  font-family: var(--pda-font);
+  font-size: 28px;
+  font-weight: bold;
+  line-height: 1;
+  text-shadow: 0 0 6px rgba(0, 255, 102, 0.8);
+  box-shadow: 0 0 0 1px #000, 0 4px 10px rgba(0, 0, 0, 0.6);
+  cursor: pointer;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.pda-btn:hover,
+.pda-btn:focus-visible {
+  border-color: var(--pda-green-dim);
+  box-shadow: 0 0 0 1px #000, 0 0 12px rgba(0, 255, 102, 0.35);
+  outline-color: rgba(0, 255, 102, 0.5);
+}
+
+.pda-btn:active {
+  background: var(--pda-green);
+  color: #000;
+  text-shadow: none;
+}
+
+.pda-btn--locate {
+  margin-top: 10px;
+}
+
+.pda-btn--locate svg {
+  filter: drop-shadow(0 0 4px rgba(0, 255, 102, 0.8));
+}
+
+.pda-btn--locate.is-tracking {
+  border-color: var(--pda-green);
+}
+
+.pda-btn:disabled,
+.pda-btn--locate.is-unavailable {
+  color: var(--pda-green-dim);
+  text-shadow: none;
+}
+
+/* ---------- Предупреждение GPS ---------- */
+
+.pda-warning {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1100;
+  max-width: calc(100vw - 32px);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: var(--pda-bg);
+  border: 1px solid var(--pda-warn);
+  border-left-width: 4px;
+  color: var(--pda-warn);
+  font-family: var(--pda-font);
+  font-size: 13px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  text-shadow: 0 0 6px rgba(255, 204, 0, 0.6);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  animation: pda-blink-in 0.4s steps(4) both;
+}
+
+.pda-warning[hidden] {
+  display: none;
+}
+
+.pda-warning__icon {
+  font-size: 16px;
+  animation: pda-pulse 1.2s steps(2) infinite;
+}
+
+/* ---------- Статус-строка ---------- */
+
+.pda-status {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  padding: 4px 12px;
+  background: var(--pda-bg);
+  border-top: 1px solid var(--pda-border);
+  color: var(--pda-green);
+  font-family: var(--pda-font);
+  font-size: 12px;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 0 4px rgba(0, 255, 102, 0.6);
+  pointer-events: none;
+}
+
+/* ---------- Текстовые метки локаций ---------- */
+
+.stalker-label {
+  /* L.divIcon по умолчанию добавляет белый фон и рамку — убираем */
+  background: transparent !important;
+  border: none !important;
+}
+
+.stalker-label span {
+  display: inline-block;
+  transform: translate(-50%, -50%);
+  padding: 3px 8px;
+  white-space: nowrap;
+  background: rgba(0, 0, 0, 0.72);
+  border: 1px solid rgba(0, 255, 102, 0.45);
+  color: var(--pda-green);
+  font-family: var(--pda-font);
+  font-size: 13px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  text-shadow:
+    0 0 4px rgba(0, 255, 102, 0.9),
+    1px 1px 0 #000,
+    -1px -1px 0 #000;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.8);
+  pointer-events: none;
+}
+
+/* ---------- Попап (стиль КПК) ---------- */
+
+.pda-popup .leaflet-popup-content-wrapper {
+  background: var(--pda-bg-solid);
+  color: var(--pda-green);
+  border: 2px solid var(--pda-border);
+  border-radius: 0;
+  outline: 1px solid rgba(0, 255, 102, 0.3);
+  outline-offset: -6px;
+  box-shadow: 0 0 0 1px #000, 0 6px 20px rgba(0, 0, 0, 0.8), 0 0 14px rgba(0, 255, 102, 0.15);
+}
+
+.pda-popup .leaflet-popup-content {
+  margin: 14px 18px;
+  font-family: var(--pda-font);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.pda-popup .leaflet-popup-tip {
+  background: var(--pda-bg-solid);
+  border: 2px solid var(--pda-border);
+  box-shadow: none;
+}
+
+.pda-popup a.leaflet-popup-close-button {
+  color: var(--pda-green);
+  font-family: var(--pda-font);
+  top: 4px;
+  right: 4px;
+}
+
+.pda-popup a.leaflet-popup-close-button:hover {
+  color: #fff;
+}
+
+.pda-popup__title {
+  margin: 0 0 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px dashed var(--pda-green-dim);
+  font-size: 15px;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: 0 0 6px rgba(0, 255, 102, 0.8);
+}
+
+.pda-popup__text {
+  margin: 0;
+  color: #b8ffd2;
+}
+
+.pda-popup__coords {
+  margin: 8px 0 0;
+  color: var(--pda-green-dim);
+  font-size: 11px;
+}
+
+/* ---------- Атрибуция Leaflet ---------- */
+
+.leaflet-control-attribution.leaflet-control {
+  margin-bottom: 24px; /* над статус-строкой */
+  background: rgba(0, 0, 0, 0.6);
+  color: var(--pda-green-dim);
+  font-family: var(--pda-font);
+  font-size: 10px;
+}
+
+.leaflet-control-attribution a {
+  color: var(--pda-green-dim);
+}
+
+/* Игрок поверх меток */
+.player-marker {
+  filter: drop-shadow(0 0 6px rgba(0, 255, 102, 0.9));
+}
+
+/* ---------- Анимации ---------- */
+
+@keyframes pda-pulse {
+  0%   { opacity: 1; }
+  100% { opacity: 0.25; }
+}
+
+@keyframes pda-blink-in {
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+@media (max-width: 480px) {
+  .pda-warning {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+}

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#0f1410">
+  <title>КПК — Карта Зоны</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="map"></div>
+
+  <!-- Предупреждение об ошибке GPS -->
+  <div id="gps-warning" class="pda-warning" role="status" aria-live="polite" hidden>
+    <span class="pda-warning__icon">⚠</span>
+    <span id="gps-warning-text">Помилка зв'язку з КПК: GPS недоступний</span>
+  </div>
+
+  <!-- Панель управления КПК -->
+  <div class="pda-controls" aria-label="Управление картой">
+    <button id="btn-zoom-in" class="pda-btn" type="button" title="Приблизить" aria-label="Приблизить">+</button>
+    <button id="btn-zoom-out" class="pda-btn" type="button" title="Отдалить" aria-label="Отдалить">−</button>
+    <button id="btn-locate" class="pda-btn pda-btn--locate" type="button" title="Моя позиция" aria-label="Моя позиция">
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+        <circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="2"/>
+        <circle cx="12" cy="12" r="2" fill="currentColor"/>
+        <line x1="12" y1="1" x2="12" y2="5" stroke="currentColor" stroke-width="2"/>
+        <line x1="12" y1="19" x2="12" y2="23" stroke="currentColor" stroke-width="2"/>
+        <line x1="1" y1="12" x2="5" y2="12" stroke="currentColor" stroke-width="2"/>
+        <line x1="19" y1="12" x2="23" y2="12" stroke="currentColor" stroke-width="2"/>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Статус-строка КПК -->
+  <div class="pda-status" id="pda-status">GPS: поиск сигнала…</div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <script src="app.js"></script>
+</body>
+</html>
