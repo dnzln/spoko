@@ -45,10 +45,6 @@
       name: 'Оранжерея «Жгучий пух»',
       coords: [50.37602, 30.47211]
     },
-    // {
-    //   name: 'Пожежная частина (СВПЧ-6)',
-    //   coords: [50.36782, 30.47241]
-    // },
     {
       name: 'Янтар',
       coords: [50.36408, 30.48691]
@@ -63,9 +59,16 @@
     }
   ]
 
+  const STASHES = [
+    {
+      name: 'Тайник в зоне',
+      description: 'Координаты подтверждены. Ищи в обозначенном секторе.',
+      coords: [50.37035, 30.47889]
+    }
+  ]
+
   var MAP_CENTER = [50.37034, 30.46824];
   var MAP_ZOOM = 17;
-  var STASH_COORDS = [50.37035, 30.47889];
   var LOCATE_ZOOM = 18;
   var ACCURACY_CIRCLE_SCALE = 0.9; // визуальный масштаб круга точности
 
@@ -82,7 +85,7 @@
     maxZoom: 19
   }).addTo(map);
 
-  // ---------- Тайник ----------
+  // ---------- Тайники ----------
 
   var stashIcon = L.icon({
     iconUrl: 'img/stash.png',
@@ -91,16 +94,27 @@
     popupAnchor: [0, -18]
   });
 
-  var stashPopup = L.popup({ className: 'pda-popup', maxWidth: 260 })
-    .setContent(
-      '<h3 class="pda-popup__title">Тайник в зоне</h3>' +
-      '<p class="pda-popup__text">Координаты подтверждены. Ищи в обозначенном секторе.</p>' +
-      '<p class="pda-popup__coords">' + formatCoords(STASH_COORDS[0], STASH_COORDS[1]) + '</p>'
-    );
+  function createElement(tag, className, text) {
+    var el = document.createElement(tag);
+    el.className = className;
+    el.textContent = text;
+    return el;
+  }
 
-  L.marker(STASH_COORDS, { icon: stashIcon, title: 'Тайник' })
-    .bindPopup(stashPopup)
-    .addTo(map);
+  function addStash(stash) {
+    var content = document.createElement('div');
+    content.appendChild(createElement('h3', 'pda-popup__title', stash.name));
+    if (stash.description) {
+      content.appendChild(createElement('p', 'pda-popup__text', stash.description));
+    }
+    content.appendChild(createElement('p', 'pda-popup__coords', formatCoords(stash.coords[0], stash.coords[1])));
+
+    return L.marker(stash.coords, { icon: stashIcon, title: stash.name })
+      .bindPopup(L.popup({ className: 'pda-popup', maxWidth: 260 }).setContent(content))
+      .addTo(map);
+  }
+
+  STASHES.forEach(addStash);
 
   // ---------- Текстовые метки локаций ----------
 
