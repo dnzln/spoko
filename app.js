@@ -76,14 +76,14 @@
   //   visible  — false: на карте ничего не видно, остаётся только звук
   const DANGER_ZONES = [
     {
-      name: 'Радіаційна пляма',
-      coords: [50.37034, 30.46824],
-      visible: false
+      // name: 'Радіаційна пляма',
+      coords: [50.37433, 30.47018],
+      image: 'img/rad.webp'
     },
     {
-      name: 'Радіаційна пляма 2',
-      coords: [50.37004, 30.46769],
-      visible: false
+      // name: 'Радіаційна пляма 2',
+      coords: [50.36957, 30.47035],
+      image: 'img/rad.webp'
     }
     // {
     //   name: 'Аномалія «Жарка»',
