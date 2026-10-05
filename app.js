@@ -67,7 +67,7 @@
   var MAP_ZOOM = 17;
   var STASH_COORDS = [50.37035, 30.47889];
   var LOCATE_ZOOM = 18;
-  var ACCURACY_CIRCLE_SCALE = 0.3; // визуальный масштаб круга точности
+  var ACCURACY_CIRCLE_SCALE = 0.9; // визуальный масштаб круга точности
 
   // ---------- Карта ----------
 
@@ -168,19 +168,24 @@
 
   // ---------- Геолокация игрока ----------
 
-  var playerIcon = L.icon({
-    iconUrl: 'img/player.png',
+  // divIcon с вложенной картинкой: transform самого маркера занят Leaflet под позиционирование,
+  // поэтому вращаем внутренний <img>
+  var playerIcon = L.divIcon({
+    className: 'player-marker',
+    html: '<img class="player-marker__arrow" src="img/player.png" alt="">',
     iconSize: [44, 44],
-    iconAnchor: [22, 22],
-    className: 'player-marker'
+    iconAnchor: [22, 22]
   });
 
   var playerMarker = null;
+  var playerArrowEl = null;
   var accuracyCircle = null;
 
   function onPosition(pos) {
     var latlng = [pos.coords.latitude, pos.coords.longitude];
     var accuracy = pos.coords.accuracy || 0;
+    var course = pos.coords.heading;
+    var speed = pos.coords.speed;
 
     if (!playerMarker) {
       accuracyCircle = L.circle(latlng, {
@@ -200,12 +205,22 @@
         zIndexOffset: 1000
       }).addTo(map);
 
+      playerArrowEl = playerMarker.getElement().querySelector('.player-marker__arrow');
+      if (lastHeading !== null) {
+        applyHeading(lastHeading);
+      }
+
       locateBtn.classList.remove('is-unavailable');
       locateBtn.classList.add('is-tracking');
     } else {
       playerMarker.setLatLng(latlng);
       accuracyCircle.setLatLng(latlng);
       accuracyCircle.setRadius(accuracy * ACCURACY_CIRCLE_SCALE);
+    }
+
+    // Нет компаса — разворачиваем стрелку по курсу движения из GPS (он есть только на ходу)
+    if (!compassActive && course !== null && !isNaN(course) && speed > MIN_SPEED_FOR_COURSE) {
+      applyHeading(course);
     }
 
     hideWarning();
@@ -231,6 +246,95 @@
       watchId = null;
     }
   }
+
+  // ---------- Направление игрока (компас / курс GPS) ----------
+
+  var PLAYER_ICON_HEADING = 90;   // куда смотрит стрелка на player.png: 0 — вверх, 90 — вправо
+  var MIN_SPEED_FOR_COURSE = 1;   // м/с; медленнее курс GPS скачет случайно
+
+  var compassActive = false;
+  var lastHeading = null;
+  var currentRotation = null;
+
+  // heading — градусы от севера по часовой стрелке
+  function applyHeading(heading) {
+    lastHeading = heading;
+    if (!playerArrowEl) {
+      return;
+    }
+
+    var target = heading - PLAYER_ICON_HEADING;
+    if (currentRotation === null) {
+      currentRotation = target;
+    } else {
+      // Крутим по кратчайшей дуге, чтобы на переходе 359° → 0° стрелка не делала полный оборот
+      var delta = ((target - currentRotation) % 360 + 540) % 360 - 180;
+      if (Math.abs(delta) < 1) {
+        return;
+      }
+      currentRotation += delta;
+    }
+    playerArrowEl.style.transform = 'rotate(' + currentRotation + 'deg)';
+  }
+
+  function getScreenAngle() {
+    if (screen.orientation && typeof screen.orientation.angle === 'number') {
+      return screen.orientation.angle;
+    }
+    return typeof window.orientation === 'number' ? window.orientation : 0;
+  }
+
+  function onDeviceOrientation(e) {
+    var heading = null;
+
+    if (typeof e.webkitCompassHeading === 'number' && !isNaN(e.webkitCompassHeading)) {
+      heading = e.webkitCompassHeading;          // iOS: уже от севера по часовой
+    } else if (e.absolute && typeof e.alpha === 'number') {
+      heading = 360 - e.alpha;                   // Android: alpha идёт против часовой
+    }
+
+    if (heading === null) {
+      return;
+    }
+
+    compassActive = true;
+    applyHeading((heading + getScreenAngle()) % 360);
+  }
+
+  function startCompass() {
+    if ('ondeviceorientationabsolute' in window) {
+      window.addEventListener('deviceorientationabsolute', onDeviceOrientation);
+    } else if ('DeviceOrientationEvent' in window) {
+      window.addEventListener('deviceorientation', onDeviceOrientation);
+    }
+  }
+
+  // iOS 13+ выдаёт компас только после явного разрешения, и спросить можно лишь по касанию
+  if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
+    var compassAsked = false;
+    var askCompass = function () {
+      if (compassAsked) {
+        return;
+      }
+      compassAsked = true;
+      document.removeEventListener('click', askCompass, true);
+      document.removeEventListener('touchend', askCompass, true);
+
+      DeviceOrientationEvent.requestPermission()
+        .then(function (state) {
+          if (state === 'granted') {
+            startCompass();
+          }
+        })
+        .catch(function () {});
+    };
+    document.addEventListener('click', askCompass, true);
+    document.addEventListener('touchend', askCompass, true);
+  } else {
+    startCompass();
+  }
+
+  // ---------- Запуск GPS ----------
 
   var watchId = null;
 
