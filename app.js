@@ -67,10 +67,38 @@
     }
   ]
 
+  // Опасные зоны / аномалии: подходишь ближе DANGER_ZONE_DISTANCE — трещит счётчик Гейгера
+  //   name     — надпись на карте
+  //   coords   — центр зоны
+  //   color    — 'yellow' (по умолчанию) или 'red'
+  //   image    — необязательно: картинка зоны, например 'img/anomaly.png'
+  //   showName — false: показывать только картинку, без надписи
+  //   visible  — false: на карте ничего не видно, остаётся только звук
+  const DANGER_ZONES = [
+    {
+      name: 'Радіаційна пляма',
+      coords: [50.37034, 30.46824],
+      visible: false
+    },
+    // {
+    //   name: 'Аномалія «Жарка»',
+    //   coords: [50.37150, 30.47600],
+    //   color: 'red',
+    //   image: 'img/anomaly.png'
+    // },
+    // {
+    //   name: 'Тихий фон біля бункера',
+    //   coords: [50.37381, 30.47999],
+    //   visible: false
+    // }
+  ]
+
   var MAP_CENTER = [50.37034, 30.46824];
   var MAP_ZOOM = 17;
   var LOCATE_ZOOM = 18;
   var ACCURACY_CIRCLE_SCALE = 0.9; // визуальный масштаб круга точности
+  var DANGER_ZONE_DISTANCE = 20;   // м; ближе к опасной зоне — включается счётчик Гейгера
+  var DANGER_ZONE_ICON_SIZE = 40;  // px; размер картинки опасной зоны
 
   // ---------- Карта ----------
 
@@ -136,6 +164,48 @@
   PLACES.forEach(function(place) {
     addLabel(place.coords, '' + place.name);
   });
+
+  // ---------- Опасные зоны на карте ----------
+
+  function addDangerZone(zone) {
+    var showName = zone.showName !== false && Boolean(zone.name);
+    if (zone.visible === false || (!zone.image && !showName)) {
+      return null;
+    }
+
+    var body = document.createElement('div');
+    body.className = 'danger-zone__body';
+
+    if (zone.image) {
+      var img = document.createElement('img');
+      img.className = 'danger-zone__image';
+      img.src = zone.image;
+      img.alt = '';
+      img.width = DANGER_ZONE_ICON_SIZE;
+      img.height = DANGER_ZONE_ICON_SIZE;
+      body.appendChild(img);
+      // Центр картинки — ровно в точке зоны, надпись висит под ней
+      body.style.marginTop = -(DANGER_ZONE_ICON_SIZE / 2) + 'px';
+    } else {
+      body.classList.add('danger-zone__body--text-only');
+    }
+
+    if (showName) {
+      body.appendChild(createElement('span', 'danger-zone__name', zone.name));
+    }
+
+    return L.marker(zone.coords, {
+      icon: L.divIcon({
+        className: 'danger-zone danger-zone--' + (zone.color === 'red' ? 'red' : 'yellow'),
+        html: body,
+        iconSize: null
+      }),
+      interactive: false,
+      keyboard: false
+    }).addTo(map);
+  }
+
+  DANGER_ZONES.forEach(addDangerZone);
 
 
   // ---------- Интерфейс ----------
@@ -237,6 +307,9 @@
       applyHeading(course);
     }
 
+    inDangerZone = getNearestDangerDistance(latlng) < DANGER_ZONE_DISTANCE;
+    updateGeiger();
+
     hideWarning();
     setStatus('GPS: ' + formatCoords(latlng[0], latlng[1]) + ' | ±' + Math.round(accuracy) + ' м');
   }
@@ -247,6 +320,10 @@
       setStatus('GPS: слабый сигнал…');
       return;
     }
+
+    // Позиция потеряна — не оставляем счётчик трещать бесконечно
+    inDangerZone = false;
+    updateGeiger();
 
     showWarning();
     setStatus('GPS: нет сигнала');
@@ -347,6 +424,56 @@
   } else {
     startCompass();
   }
+
+  // ---------- Опасные зоны и счётчик Гейгера ----------
+
+  var geiger = new Audio('geiger.mp3');
+  geiger.loop = true;
+  geiger.preload = 'auto';
+
+  var inDangerZone = false;
+
+  function getNearestDangerDistance(latlng) {
+    var nearest = Infinity;
+    DANGER_ZONES.forEach(function (zone) {
+      nearest = Math.min(nearest, map.distance(latlng, zone.coords));
+    });
+    return nearest;
+  }
+
+  function updateGeiger() {
+    if (inDangerZone) {
+      if (geiger.paused) {
+        // До первого касания экрана браузер звук не пустит — тогда его включит unlockAudio
+        geiger.play().catch(function () {});
+      }
+    } else if (!geiger.paused) {
+      geiger.pause();
+      geiger.currentTime = 0;
+    }
+  }
+
+  // Браузеры запрещают звук без действия пользователя, поэтому на первом касании
+  // беззвучно запускаем плеер — после этого его можно включать из кода
+  function unlockAudio() {
+    geiger.muted = true;
+    geiger.play()
+      .then(function () {
+        geiger.muted = false;
+        document.removeEventListener('click', unlockAudio, true);
+        document.removeEventListener('touchend', unlockAudio, true);
+        if (!inDangerZone) {
+          geiger.pause();
+          geiger.currentTime = 0;
+        }
+      })
+      .catch(function () {
+        geiger.muted = false;
+      });
+  }
+
+  document.addEventListener('click', unlockAudio, true);
+  document.addEventListener('touchend', unlockAudio, true);
 
   // ---------- Запуск GPS ----------
 
