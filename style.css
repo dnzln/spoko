@@ -395,6 +395,7 @@ body {
 .pda-popup__text {
   margin: 0;
   color: var(--popup-text);
+  white-space: pre-line;
 }
 
 .pda-popup__coords {
