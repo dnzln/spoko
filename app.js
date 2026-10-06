@@ -95,7 +95,7 @@
     },
     {
       name: 'Тепла стіна',
-      description: 'Кам’яна стіна посеред лісу — від будинку, якого вже немає. Кажуть, під час викиду вона прийняла удар на себе й дoсі фонить. Каміння тепле навіть узимку — руками не чіпай.',
+      description: 'Кам’яна стіна посеред лісу — від будинку, якого вже немає. Кажуть, під час викиду вона прийняла удар на себе й досі фонить. Каміння тепле навіть узимку — руками не чіпай.',
       coords: [50.36951555276578, 30.470651952451625],
       image: 'img/rad.webp',
       showName: false
@@ -784,5 +784,31 @@
     });
   } else {
     onPositionError(null);
+  }
+
+  var wakeLock = null;
+
+  function requestWakeLock() {
+    if (!('wakeLock' in navigator) || wakeLock || document.visibilityState !== 'visible') {
+      return;
+    }
+    navigator.wakeLock.request('screen')
+      .then(function (lock) {
+        wakeLock = lock;
+        lock.addEventListener('release', function () {
+          wakeLock = null;
+        });
+      })
+      .catch(function () {});
+  }
+
+  requestWakeLock();
+  document.addEventListener('click', requestWakeLock, true);
+  document.addEventListener('visibilitychange', requestWakeLock);
+
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('sw.js').catch(function () {});
+    });
   }
 })();
