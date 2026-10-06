@@ -77,10 +77,12 @@
 
   const ARTIFACTS = [
     {
+      id: 'artifact-1',
       name: 'Артефакт',
-      coords: [50.372527774499154, 30.470685237475667]
+      coords: [50.370091631383005, 30.467782669885846]
     },
     {
+      id: 'artifact-2',
       name: 'Артефакт',
       coords: [50.37034, 30.46824]
     }
@@ -118,6 +120,7 @@
   var DANGER_ZONE_ICON_SIZE = 40;
   var ANOMALY_ICON_SIZE = 36;
   var POPUP_WIDTH = Math.min(280, window.innerWidth - 70);
+  var NTFY_TOPIC = 'kpk-zona-aca6kkalpdedtw';
   var PLAYER_ICON_HEADING = 90;
   var MIN_SPEED_FOR_COURSE = 1;
   var DETECTOR_VOLUME = 0.8;
@@ -530,6 +533,8 @@
   var detectorLoop = null;
   var lastBeepAt = 0;
   var smoothedArtifactDistance = null;
+  var lastPlayerLatLng = null;
+  var foundArtifacts = {};
 
   if (audioCtx) {
     fetch('beep.mp3')
@@ -576,8 +581,20 @@
     return last.interval;
   }
 
+  function getActiveArtifacts() {
+    return ARTIFACTS.filter(function (artifact) {
+      return !foundArtifacts[artifact.id];
+    });
+  }
+
   function updateDetector(latlng) {
-    var distance = getNearestDistance(ARTIFACTS, latlng);
+    lastPlayerLatLng = latlng;
+    var distance = getNearestDistance(getActiveArtifacts(), latlng);
+
+    if (!isFinite(distance)) {
+      resetDetector();
+      return;
+    }
 
     if (smoothedArtifactDistance === null) {
       smoothedArtifactDistance = distance;
@@ -670,6 +687,49 @@
       scheduleNextBeep();
     }
   }
+
+  function handleRemoteCommand(text) {
+    var command = text.trim().toLowerCase();
+
+    if (command === 'reset') {
+      foundArtifacts = {};
+    } else if (ARTIFACTS.some(function (artifact) { return artifact.id === command; })) {
+      foundArtifacts[command] = true;
+    } else {
+      return;
+    }
+
+    smoothedArtifactDistance = null;
+    if (lastPlayerLatLng) {
+      updateDetector(lastPlayerLatLng);
+    }
+  }
+
+  var remoteSource = null;
+
+  function listenRemoteCommands() {
+    if (!window.EventSource) {
+      return;
+    }
+
+    remoteSource = new EventSource('https://ntfy.sh/' + NTFY_TOPIC + '/sse?since=12h');
+    remoteSource.onmessage = function (event) {
+      try {
+        var data = JSON.parse(event.data);
+        if (data.event === 'message' && typeof data.message === 'string') {
+          handleRemoteCommand(data.message);
+        }
+      } catch (err) {}
+    };
+  }
+
+  document.addEventListener('visibilitychange', function () {
+    if (document.visibilityState === 'visible' && remoteSource && remoteSource.readyState === EventSource.CLOSED) {
+      listenRemoteCommands();
+    }
+  });
+
+  listenRemoteCommands();
 
   var watchId = null;
 
