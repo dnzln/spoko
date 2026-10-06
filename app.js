@@ -68,10 +68,6 @@
   const ARTIFACTS = [
     {
       name: 'Артефакт',
-      coords: [50.3700873586505, 30.467782315442314]
-    },
-    {
-      name: 'Артефакт',
       coords: [50.372527774499154, 30.470685237475667]
     },
     {
@@ -114,10 +110,12 @@
   var PLAYER_ICON_HEADING = 90;
   var MIN_SPEED_FOR_COURSE = 1;
   var DETECTOR_VOLUME = 0.8;
-  var DETECTOR_LEVELS = [
-    { distance: 3, interval: 0 },
-    { distance: 5, interval: 250 },
-    { distance: 10, interval: 600 },
+  var DETECTOR_CONTINUOUS_DISTANCE = 3;
+  var DETECTOR_SMOOTHING = 0.5;
+  var DETECTOR_CURVE = [
+    { distance: 3, interval: 200 },
+    { distance: 5, interval: 300 },
+    { distance: 10, interval: 650 },
     { distance: 15, interval: 1100 }
   ];
 
@@ -355,7 +353,7 @@
     inDangerZone = getNearestDistance(DANGER_ZONES, latlng) < DANGER_ZONE_DISTANCE;
     updateGeiger();
 
-    setDetectorInterval(getDetectorInterval(getNearestDistance(ARTIFACTS, latlng)));
+    updateDetector(latlng);
 
     hideWarning();
     setStatus('GPS: ' + formatCoords(latlng[0], latlng[1]) + ' | ±' + Math.round(accuracy) + ' м');
@@ -369,7 +367,7 @@
 
     inDangerZone = false;
     updateGeiger();
-    setDetectorInterval(null);
+    resetDetector();
 
     showWarning();
     setStatus('GPS: нет сигнала');
@@ -517,6 +515,8 @@
   var detectorInterval = null;
   var detectorTimer = null;
   var detectorLoop = null;
+  var lastBeepAt = 0;
+  var smoothedArtifactDistance = null;
 
   if (audioCtx) {
     fetch('beep.mp3')
@@ -543,12 +543,41 @@
   document.addEventListener('touchend', resumeAudioContext, true);
 
   function getDetectorInterval(distance) {
-    for (var i = 0; i < DETECTOR_LEVELS.length; i++) {
-      if (distance < DETECTOR_LEVELS[i].distance) {
-        return DETECTOR_LEVELS[i].interval;
+    var last = DETECTOR_CURVE[DETECTOR_CURVE.length - 1];
+
+    if (distance < DETECTOR_CONTINUOUS_DISTANCE) {
+      return 0;
+    }
+    if (distance > last.distance) {
+      return null;
+    }
+
+    for (var i = 1; i < DETECTOR_CURVE.length; i++) {
+      var from = DETECTOR_CURVE[i - 1];
+      var to = DETECTOR_CURVE[i];
+      if (distance <= to.distance) {
+        var t = Math.max(0, (distance - from.distance) / (to.distance - from.distance));
+        return Math.round(from.interval + t * (to.interval - from.interval));
       }
     }
-    return null;
+    return last.interval;
+  }
+
+  function updateDetector(latlng) {
+    var distance = getNearestDistance(ARTIFACTS, latlng);
+
+    if (smoothedArtifactDistance === null) {
+      smoothedArtifactDistance = distance;
+    } else {
+      smoothedArtifactDistance += DETECTOR_SMOOTHING * (distance - smoothedArtifactDistance);
+    }
+
+    setDetectorInterval(getDetectorInterval(smoothedArtifactDistance));
+  }
+
+  function resetDetector() {
+    smoothedArtifactDistance = null;
+    setDetectorInterval(null);
   }
 
   function playBeep(length, loop) {
@@ -577,8 +606,19 @@
     return source;
   }
 
+  function beepTick() {
+    lastBeepAt = Date.now();
+    playBeep(detectorInterval * 0.8 / 1000, false);
+    scheduleNextBeep();
+  }
+
+  function scheduleNextBeep() {
+    clearTimeout(detectorTimer);
+    detectorTimer = setTimeout(beepTick, Math.max(0, lastBeepAt + detectorInterval - Date.now()));
+  }
+
   function stopDetector() {
-    clearInterval(detectorTimer);
+    clearTimeout(detectorTimer);
     detectorTimer = null;
     if (detectorLoop) {
       detectorLoop.stop();
@@ -598,19 +638,24 @@
       return;
     }
 
-    var beepLength = detectorInterval * 0.6 / 1000;
-    playBeep(beepLength, false);
-    detectorTimer = setInterval(function () {
-      playBeep(beepLength, false);
-    }, detectorInterval);
+    scheduleNextBeep();
   }
 
   function setDetectorInterval(interval) {
     if (interval === detectorInterval) {
       return;
     }
+
+    var modeChanged = (interval === null) !== (detectorInterval === null) ||
+      (interval === 0) !== (detectorInterval === 0);
+
     detectorInterval = interval;
-    startDetector();
+
+    if (modeChanged) {
+      startDetector();
+    } else {
+      scheduleNextBeep();
+    }
   }
 
   var watchId = null;
