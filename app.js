@@ -1,6 +1,8 @@
 (function () {
   'use strict';
 
+  const HOME = [50.370091631383005, 30.467782669885846];
+
   const PLACES = [
     {
       name: 'Завод «Юпітер»',
@@ -63,7 +65,7 @@
     {
       name: 'Скинутий хабар',
       description: 'Писав на бігу. "Долг" сів на хвіст біля «Полісся» — з усім хабаром не відірвався б. Південний вихід, де місток над висохлим руслом. Частину здобичі скинув під міст, на опору.',
-      coords: [50.369171023508954, 30.474612023954126]
+      coords: [50.369051090571084, 30.474616293626667]
     }
   ];
 
@@ -81,11 +83,6 @@
       name: 'Артефакт',
       coords: [50.370091631383005, 30.467782669885846]
     },
-    {
-      id: 'artifact-2',
-      name: 'Артефакт',
-      coords: [50.37034, 30.46824]
-    }
   ];
 
   const DANGER_ZONES = [
@@ -491,6 +488,8 @@
   }
 
   function updateGeiger() {
+    document.body.classList.toggle('fx-radiation', inDangerZone);
+
     if (inDangerZone) {
       if (geiger.paused) {
         geiger.play().catch(function () {});
@@ -636,9 +635,49 @@
     return source;
   }
 
+  var fxEl = document.getElementById('fx');
+  var detectorWaveTimer = null;
+
+  function createNoiseTexture() {
+    var size = 128;
+    var canvas = document.createElement('canvas');
+    canvas.width = size;
+    canvas.height = size;
+    var ctx = canvas.getContext('2d');
+    var image = ctx.createImageData(size, size);
+    for (var i = 0; i < image.data.length; i += 4) {
+      var value = Math.random() * 255;
+      image.data[i] = value;
+      image.data[i + 1] = value;
+      image.data[i + 2] = value;
+      image.data[i + 3] = 255;
+    }
+    ctx.putImageData(image, 0, 0);
+    document.documentElement.style.setProperty('--noise', 'url(' + canvas.toDataURL() + ')');
+  }
+
+  createNoiseTexture();
+
+  function spawnDetectorWave() {
+    if (document.hidden) {
+      return;
+    }
+
+    var point = playerMarker ? map.latLngToContainerPoint(playerMarker.getLatLng()) : map.getSize().divideBy(2);
+    var wave = document.createElement('div');
+    wave.className = 'fx-wave';
+    wave.style.left = point.x + 'px';
+    wave.style.top = point.y + 'px';
+    fxEl.appendChild(wave);
+    setTimeout(function () {
+      wave.remove();
+    }, 1300);
+  }
+
   function beepTick() {
     lastBeepAt = Date.now();
     playBeep(detectorInterval * 0.8 / 1000, false);
+    spawnDetectorWave();
     scheduleNextBeep();
   }
 
@@ -650,6 +689,8 @@
   function stopDetector() {
     clearTimeout(detectorTimer);
     detectorTimer = null;
+    clearInterval(detectorWaveTimer);
+    detectorWaveTimer = null;
     if (detectorLoop) {
       detectorLoop.stop();
       detectorLoop = null;
@@ -665,6 +706,8 @@
 
     if (detectorInterval === 0) {
       detectorLoop = playBeep(0, true);
+      spawnDetectorWave();
+      detectorWaveTimer = setInterval(spawnDetectorWave, 300);
       return;
     }
 

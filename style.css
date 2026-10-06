@@ -549,6 +549,141 @@ body {
   will-change: transform;
 }
 
+/* ---------- Эффекты: помехи радиации и волны детектора ---------- */
+
+.fx {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.fx-noise {
+  position: absolute;
+  inset: -50%;
+  background-image: var(--noise);
+  mix-blend-mode: overlay;
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+body.fx-radiation .fx-noise {
+  opacity: 0.4;
+  animation: fx-noise 0.3s steps(4) infinite;
+}
+
+.fx-tear {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+
+.fx-tear::before,
+.fx-tear::after {
+  content: "";
+  position: absolute;
+  left: -20px;
+  right: -20px;
+  height: 0;
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(220, 255, 230, 0.35) 0 1px,
+      rgba(0, 0, 0, 0.45) 1px 3px
+    );
+  box-shadow: 0 0 6px rgba(0, 255, 102, 0.35);
+}
+
+body.fx-radiation .fx-tear {
+  opacity: 1;
+}
+
+body.fx-radiation .fx-tear::before {
+  animation: fx-tear-a 2.3s steps(1) infinite;
+}
+
+body.fx-radiation .fx-tear::after {
+  animation: fx-tear-b 3.1s steps(1) infinite;
+}
+
+body.fx-radiation .leaflet-tile-pane {
+  animation: fx-jitter 1.7s steps(1) infinite;
+}
+
+.fx-wave {
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  margin: -60px 0 0 -60px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    transparent 52%,
+    rgba(235, 255, 245, 0.55) 64%,
+    rgba(235, 255, 245, 0.15) 70%,
+    transparent 74%
+  );
+  animation: fx-wave 1.2s ease-out forwards;
+}
+
+@keyframes fx-noise {
+  0%   { transform: translate(0, 0); }
+  25%  { transform: translate(-10%, 5%); }
+  50%  { transform: translate(7%, -8%); }
+  75%  { transform: translate(-4%, 9%); }
+  100% { transform: translate(9%, -3%); }
+}
+
+@keyframes fx-tear-a {
+  0%   { top: 12%; height: 6px;  transform: translateX(-8px); }
+  6%   { height: 0; }
+  22%  { top: 63%; height: 18px; transform: translateX(12px); }
+  27%  { height: 0; }
+  48%  { top: 31%; height: 4px;  transform: translateX(-4px); }
+  51%  { height: 0; }
+  72%  { top: 82%; height: 12px; transform: translateX(6px); }
+  79%  { height: 0; }
+}
+
+@keyframes fx-tear-b {
+  0%   { top: 45%; height: 3px;  transform: translateX(5px); }
+  4%   { height: 0; }
+  33%  { top: 18%; height: 10px; transform: translateX(-10px); }
+  38%  { height: 0; }
+  61%  { top: 70%; height: 22px; transform: translateX(8px); }
+  64%  { top: 72%; height: 8px;  transform: translateX(-6px); }
+  68%  { height: 0; }
+}
+
+@keyframes fx-jitter {
+  0%, 100% { transform: none; filter: none; }
+  8%       { transform: translateX(6px); filter: hue-rotate(40deg) saturate(1.6); }
+  11%      { transform: none; filter: none; }
+  47%      { transform: translateX(-10px) skewX(-2deg); filter: contrast(1.5) brightness(1.2); }
+  50%      { transform: none; filter: none; }
+  81%      { transform: translate(4px, -2px); filter: grayscale(0.6); }
+  84%      { transform: none; filter: none; }
+}
+
+@keyframes fx-wave {
+  from { transform: scale(0.1); opacity: 0.9; }
+  to   { transform: scale(9);   opacity: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.fx-radiation .fx-noise,
+  body.fx-radiation .fx-tear::before,
+  body.fx-radiation .fx-tear::after,
+  body.fx-radiation .leaflet-tile-pane {
+    animation: none;
+  }
+
+  .fx-wave {
+    display: none;
+  }
+}
+
 /* ---------- Анимации ---------- */
 
 @keyframes pda-pulse {
