@@ -203,7 +203,13 @@ body {
     1px 1px 0 #000,
     -1px -1px 0 #000;
   box-shadow: 0 0 8px rgba(0, 0, 0, 0.8);
-  pointer-events: none;
+  cursor: pointer;
+  transition: box-shadow 0.15s, border-color 0.15s;
+}
+
+.stalker-label span:hover {
+  border-color: var(--pda-green);
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 255, 102, 0.5);
 }
 
 /* ---------- Опасные зоны / аномалии ---------- */
@@ -229,7 +235,7 @@ body {
   align-items: center;
   gap: 3px;
   transform: translateX(-50%);
-  pointer-events: none;
+  cursor: pointer;
 }
 
 .danger-zone__body--text-only {
@@ -288,16 +294,57 @@ body {
   98%           { opacity: 0.6; }
 }
 
-/* ---------- Попап (стиль КПК) ---------- */
+/* ---------- Аномалии ---------- */
+
+.anomaly-marker {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.anomaly-marker__image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  /* Белый силуэт на спутнике теряется — обводим фиолетово-бирюзовым свечением */
+  filter:
+    drop-shadow(0 0 1px #000)
+    drop-shadow(0 0 4px #b388ff)
+    drop-shadow(0 0 10px rgba(102, 255, 255, 0.7));
+  animation: anomaly-shimmer 3.2s ease-in-out infinite;
+}
+
+@keyframes anomaly-shimmer {
+  0%, 100% { transform: scale(1) rotate(0deg);     opacity: 1; }
+  30%      { transform: scale(1.1) rotate(-6deg);  opacity: 0.75; }
+  60%      { transform: scale(0.95) rotate(5deg);  opacity: 0.95; }
+}
+
+/* ---------- Попапы (стиль КПК) ----------
+   Общий каркас на CSS-переменных; у каждого типа метки свой модификатор:
+   --stash (зелёный КПК), --place (карта с уголками), --radiation (жёлтая лента),
+   --anomaly (фиолетовый «глитч»). */
+
+.pda-popup {
+  --popup-accent: #00ff66;
+  --popup-glow: rgba(0, 255, 102, 0.8);
+  --popup-bg: #111d13;
+  --popup-border: #2a3a2d;
+  --popup-text: #b8ffd2;
+  --popup-dim: #0a7a35;
+}
 
 .pda-popup .leaflet-popup-content-wrapper {
-  background: var(--pda-bg-solid);
-  color: var(--pda-green);
-  border: 2px solid var(--pda-border);
+  position: relative;
+  background: var(--popup-bg);
+  color: var(--popup-accent);
+  border: 2px solid var(--popup-border);
   border-radius: 0;
-  outline: 1px solid rgba(0, 255, 102, 0.3);
+  outline: 1px solid rgba(255, 255, 255, 0.12); /* фолбэк для браузеров без color-mix */
+  outline: 1px solid color-mix(in srgb, var(--popup-accent) 30%, transparent);
   outline-offset: -6px;
-  box-shadow: 0 0 0 1px #000, 0 6px 20px rgba(0, 0, 0, 0.8), 0 0 14px rgba(0, 255, 102, 0.15);
+  box-shadow: 0 0 0 1px #000, 0 6px 20px rgba(0, 0, 0, 0.8);
+  box-shadow: 0 0 0 1px #000, 0 6px 20px rgba(0, 0, 0, 0.8), 0 0 14px color-mix(in srgb, var(--popup-accent) 15%, transparent);
 }
 
 .pda-popup .leaflet-popup-content {
@@ -308,13 +355,14 @@ body {
 }
 
 .pda-popup .leaflet-popup-tip {
-  background: var(--pda-bg-solid);
-  border: 2px solid var(--pda-border);
+  background: var(--popup-bg);
+  border: 2px solid var(--popup-border);
   box-shadow: none;
 }
 
 .pda-popup a.leaflet-popup-close-button {
-  color: var(--pda-green);
+  z-index: 1;
+  color: var(--popup-accent);
   font-family: var(--pda-font);
   top: 4px;
   right: 4px;
@@ -324,26 +372,150 @@ body {
   color: #fff;
 }
 
+.pda-popup__kicker {
+  margin: 0 0 4px;
+  color: var(--popup-dim);
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+}
+
 .pda-popup__title {
   margin: 0 0 6px;
   padding-bottom: 6px;
-  border-bottom: 1px dashed var(--pda-green-dim);
+  border-bottom: 1px dashed var(--popup-dim);
   font-size: 15px;
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: 1px;
-  text-shadow: 0 0 6px rgba(0, 255, 102, 0.8);
+  text-shadow: 0 0 6px var(--popup-glow);
 }
 
 .pda-popup__text {
   margin: 0;
-  color: #b8ffd2;
+  color: var(--popup-text);
 }
 
 .pda-popup__coords {
   margin: 8px 0 0;
-  color: var(--pda-green-dim);
+  color: var(--popup-dim);
   font-size: 11px;
+}
+
+/* --- Локация: строгая «карточка карты» с уголками-скобками --- */
+
+.pda-popup--place {
+  --popup-accent: #7dffb0;
+  --popup-glow: rgba(125, 255, 176, 0.6);
+  --popup-bg: #0b100c;
+  --popup-border: #1c2a1f;
+  --popup-text: #d6f5e0;
+  --popup-dim: #4f8f66;
+}
+
+.pda-popup--place .leaflet-popup-content-wrapper {
+  outline: none;
+}
+
+.pda-popup--place .leaflet-popup-content-wrapper::before,
+.pda-popup--place .leaflet-popup-content-wrapper::after {
+  content: "";
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 2px solid var(--popup-accent);
+  pointer-events: none;
+}
+
+.pda-popup--place .leaflet-popup-content-wrapper::before {
+  top: 4px;
+  left: 4px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.pda-popup--place .leaflet-popup-content-wrapper::after {
+  right: 4px;
+  bottom: 4px;
+  border-left: none;
+  border-top: none;
+}
+
+.pda-popup--place .pda-popup__title {
+  border-bottom-style: solid;
+  text-transform: none;
+  font-size: 16px;
+}
+
+/* --- Радиация: жёлтый (или красный) с предупредительной лентой сверху --- */
+
+.pda-popup--radiation {
+  --popup-accent: #ffcc00;
+  --popup-glow: rgba(255, 204, 0, 0.7);
+  --popup-bg: #17140a;
+  --popup-border: #4a3f10;
+  --popup-text: #ffeaa8;
+  --popup-dim: #a08420;
+}
+
+.pda-popup--red {
+  --popup-accent: #ff3b30;
+  --popup-glow: rgba(255, 59, 48, 0.75);
+  --popup-bg: #1a0b0a;
+  --popup-border: #4f1a16;
+  --popup-text: #ffc9c4;
+  --popup-dim: #a8352d;
+}
+
+.pda-popup--radiation .leaflet-popup-content-wrapper::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--popup-accent) 0 6px,
+    #000 6px 12px
+  );
+}
+
+.pda-popup--radiation .leaflet-popup-content {
+  margin-top: 18px;
+}
+
+.pda-popup--radiation .pda-popup__kicker {
+  animation: pda-pulse 1s steps(2) infinite alternate;
+}
+
+/* --- Аномалия: фиолетовый с «глитчем» и пульсирующим свечением --- */
+
+.pda-popup--anomaly {
+  --popup-accent: #c9a6ff;
+  --popup-glow: rgba(179, 136, 255, 0.85);
+  --popup-bg: #110c1b;
+  --popup-border: #3b2a5c;
+  --popup-text: #e6dbff;
+  --popup-dim: #7d63b0;
+}
+
+.pda-popup--anomaly .leaflet-popup-content-wrapper {
+  outline-style: dashed;
+  animation: anomaly-popup-glow 2.6s ease-in-out infinite;
+}
+
+.pda-popup--anomaly .pda-popup__title {
+  text-shadow:
+    -1px 0 rgba(102, 255, 255, 0.8),
+    1px 0 rgba(255, 64, 160, 0.8),
+    0 0 8px var(--popup-glow);
+}
+
+@keyframes anomaly-popup-glow {
+  0%, 100% { box-shadow: 0 0 0 1px #000, 0 6px 20px rgba(0, 0, 0, 0.8), 0 0 10px rgba(179, 136, 255, 0.25); }
+  50%      { box-shadow: 0 0 0 1px #000, 0 6px 20px rgba(0, 0, 0, 0.8), 0 0 22px rgba(102, 255, 255, 0.45); }
 }
 
 /* ---------- Атрибуция Leaflet ---------- */

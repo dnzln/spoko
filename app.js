@@ -1,111 +1,125 @@
 (function () {
   'use strict';
 
-  // ---------- Настройки ----------
-
-
   const PLACES = [
     {
       name: 'Завод «Юпітер»',
+      description: 'Порожні цехи, де колись збирали щось секретне. Уночі тут гудуть трансформатори, яких давно немає.',
       coords: [50.37448, 30.46728]
     },
     {
       name: 'Кордон',
+      description: 'Цей бетонний паркан — це і є межа Зони. По цей бік ще звичайний світ, по той — уже ні. Перевір спорядження, увімкни КПК і проходь: звідси починається твій шлях.',
       coords: [50.37034, 30.46824]
-    },    
-    {
-      name: 'Рудий ліс',
-      coords: [50.37056, 30.49776]
     },
     {
-      name: 'Свалка',
+      name: 'Рудий ліс',
+      description: 'Дерева тут іржаві навіть улітку. Компас бреше, а стежки самі змінюють напрямок — тримайся своїх.',
+      coords: [50.36783619706897, 30.478709188318227]
+    },
+    {
+      name: 'Копачі',
+      description: 'Село, яке не евакуювали — його поховали. Хати засипали землею, лишилися тільки горби з жовтими знаками. Краще тут не копай, і взагалі тримайся подалі.',
       coords: [50.36751, 30.4687]
-    },    
+    },
     {
       name: 'Кафе «Полісся»',
+      description: 'Колись тут наливали каву й травили байки. Тепер — вибиті вікна, перекинуті стільці й пил. Але хтось досі лишає тут недопиту чашку.',
       coords: [50.36995, 30.47415]
     },
     {
       name: 'Бункер вчених',
+      description: 'Екологи обміняють артефакти на спорядження й не ставитимуть зайвих питань. Майже.',
       coords: [50.37381, 30.47999]
     },
     {
-      name: 'База Долгу',
-      coords: [50.3686, 30.45798]
-    },
-    {
-      name: 'ЧАЕС',
-      coords: [50.37477, 30.44422]
-    },
-    {
-      name: 'Прип’ять',
-      coords: [50.36923, 30.44357]
-    },
-    {
-      name: 'Оранжерея «Жгучий пух»',
+      name: 'Оранжерея «Пекучий пух»',
+      description: 'Скляний купол, зарослий дивною рослинністю. Пух у повітрі обпікає шкіру — не знімай протигаз.',
       coords: [50.37602, 30.47211]
     },
     {
-      name: 'Янтар',
-      coords: [50.36408, 30.48691]
-    },
-    {
-      name: 'Темна долина',
-      coords: [50.37438, 30.50486]
-    },
-    {
       name: 'Стадіон',
+      description: 'Пусті трибуни й тиша, від якої дзвенить у вухах.',
       coords: [50.37256, 30.46629]
+    },
+    {
+      name: 'Хата лісника',
+      description: 'Колись тут жив лісник. Після пожежі лишилися обвуглені стіни. Інколи тут зупиняються мандрівники, щоб перепочити, але довго залишатися не радять.',
+      coords: [50.374946119000136, 30.470839378062863]
     }
-  ]
+  ];
 
   const STASHES = [
     {
-      name: 'Тайник в зоне',
-      description: 'Координаты подтверждены. Ищи в обозначенном секторе.',
+      name: 'Схованка в Зоні',
+      description: 'Хтось залишив тут припаси й не повернувся. Координати підтверджено — шукай у позначеному секторі.',
       coords: [50.37035, 30.47889]
     }
-  ]
+  ];
 
-  // Опасные зоны / аномалии: подходишь ближе DANGER_ZONE_DISTANCE — трещит счётчик Гейгера
-  //   name     — надпись на карте
-  //   coords   — центр зоны
-  //   color    — 'yellow' (по умолчанию) или 'red'
-  //   image    — необязательно: картинка зоны, например 'img/anomaly.png'
-  //   showName — false: показывать только картинку, без надписи
-  //   visible  — false: на карте ничего не видно, остаётся только звук
-  const DANGER_ZONES = [
+  const ANOMALIES = [
     {
-      // name: 'Радіаційна пляма',
-      coords: [50.37433, 30.47018],
-      image: 'img/rad.webp'
+      name: 'Поле Шепоту',
+      description: 'Звичайне на вигляд поле, де трава шелестить навіть без вітру. Десь тут лежить артефакт — але без детектора його не знайти. Увімкни КПК і слухай: він подасть сигнал, коли будеш поруч.',
+      coords: [50.372638007141155, 30.472695628852165]
+    }
+  ];
+
+  const ARTIFACTS = [
+    {
+      name: 'Артефакт',
+      coords: [50.3700873586505, 30.467782315442314]
     },
     {
-      // name: 'Радіаційна пляма 2',
-      coords: [50.36957, 30.47035],
-      image: 'img/rad.webp'
+      name: 'Артефакт',
+      coords: [50.372527774499154, 30.470685237475667]
+    },
+    {
+      name: 'Артефакт',
+      coords: [50.37034, 30.46824]
     }
-    // {
-    //   name: 'Аномалія «Жарка»',
-    //   coords: [50.37150, 30.47600],
-    //   color: 'red',
-    //   image: 'img/anomaly.png'
-    // },
-    // {
-    //   name: 'Тихий фон біля бункера',
-    //   coords: [50.37381, 30.47999],
-    //   visible: false
-    // }
-  ]
+  ];
+
+  const DANGER_ZONES = [
+    {
+      name: 'Радіаційна пляма',
+      description: 'Прохід на Юпитер - лічильник Гейгера тут захлинається. Не затримуйся довше, ніж треба, і тримай антирад напоготові.',
+      coords: [50.37433, 30.47018],
+      image: 'img/rad.webp',
+      showName: false
+    },
+    {
+      name: 'Тепла стіна',
+      description: 'Кам’яна стіна посеред лісу — від будинку, якого вже немає. Кажуть, під час викиду вона прийняла удар на себе й досі фонить. Каміння тепле навіть узимку — руками не чіпай.',
+      coords: [50.369533159256214, 30.470544563913652],
+      image: 'img/rad.webp',
+      showName: false
+    },
+    {
+      name: 'Будка Бюрера',
+      description: 'Бетонна коробка без вікон, схожа на маленький саркофаг. Що всередині — не знає ніхто, але інколи там щось шебуртить, да і фонить поруч сильно.',
+      coords: [50.37194851311824, 30.469461228030625],
+      image: 'img/rad.webp',
+      showName: false
+    }
+  ];
 
   var MAP_CENTER = [50.37034, 30.46824];
   var MAP_ZOOM = 17;
   var LOCATE_ZOOM = 18;
-  var ACCURACY_CIRCLE_SCALE = 0.9; // визуальный масштаб круга точности
-  var DANGER_ZONE_DISTANCE = 20;   // м; ближе к опасной зоне — включается счётчик Гейгера
-  var DANGER_ZONE_ICON_SIZE = 40;  // px; размер картинки опасной зоны
-
-  // ---------- Карта ----------
+  var ACCURACY_CIRCLE_SCALE = 0.9;
+  var DANGER_ZONE_DISTANCE = 20;
+  var DANGER_ZONE_ICON_SIZE = 40;
+  var ANOMALY_ICON_SIZE = 36;
+  var PLAYER_ICON_HEADING = 90;
+  var MIN_SPEED_FOR_COURSE = 1;
+  var DETECTOR_VOLUME = 0.8;
+  var DETECTOR_LEVELS = [
+    { distance: 3, interval: 0 },
+    { distance: 5, interval: 250 },
+    { distance: 10, interval: 600 },
+    { distance: 15, interval: 1100 }
+  ];
 
   var map = L.map('map', {
     center: MAP_CENTER,
@@ -118,7 +132,36 @@
     maxZoom: 19
   }).addTo(map);
 
-  // ---------- Тайники ----------
+  function createElement(tag, className, text) {
+    var el = document.createElement(tag);
+    el.className = className;
+    el.textContent = text;
+    return el;
+  }
+
+  var POPUP_KICKERS = {
+    stash: '▣ Тайник',
+    place: '◈ Локація',
+    radiation: '☢ Радіація',
+    anomaly: '✷ Аномалія'
+  };
+
+  function createPopup(type, item, extraClass) {
+    var content = document.createElement('div');
+    content.appendChild(createElement('div', 'pda-popup__kicker', POPUP_KICKERS[type]));
+    content.appendChild(createElement('h3', 'pda-popup__title', item.name || 'Без назви'));
+    if (item.description) {
+      content.appendChild(createElement('p', 'pda-popup__text', item.description));
+    }
+    content.appendChild(createElement('p', 'pda-popup__coords', formatCoords(item.coords[0], item.coords[1])));
+
+    return L.popup({
+      className: 'pda-popup pda-popup--' + type + (extraClass ? ' ' + extraClass : ''),
+      maxWidth: 260,
+      autoPanPaddingTopLeft: [10, 70],
+      autoPanPaddingBottomRight: [70, 40]
+    }).setContent(content);
+  }
 
   var stashIcon = L.icon({
     iconUrl: 'img/stash.png',
@@ -127,50 +170,53 @@
     popupAnchor: [0, -18]
   });
 
-  function createElement(tag, className, text) {
-    var el = document.createElement(tag);
-    el.className = className;
-    el.textContent = text;
-    return el;
-  }
-
   function addStash(stash) {
-    var content = document.createElement('div');
-    content.appendChild(createElement('h3', 'pda-popup__title', stash.name));
-    if (stash.description) {
-      content.appendChild(createElement('p', 'pda-popup__text', stash.description));
-    }
-    content.appendChild(createElement('p', 'pda-popup__coords', formatCoords(stash.coords[0], stash.coords[1])));
-
     return L.marker(stash.coords, { icon: stashIcon, title: stash.name })
-      .bindPopup(L.popup({ className: 'pda-popup', maxWidth: 260 }).setContent(content))
+      .bindPopup(createPopup('stash', stash))
       .addTo(map);
   }
 
   STASHES.forEach(addStash);
 
-  // ---------- Текстовые метки локаций ----------
+  function addPlace(place) {
+    var span = createElement('span', '', place.name);
 
-  function addLabel(latlng, text) {
-    var span = document.createElement('span');
-    span.textContent = text;
-
-    return L.marker(latlng, {
+    return L.marker(place.coords, {
       icon: L.divIcon({
         className: 'stalker-label',
-        html: span.outerHTML,
-        iconSize: null
+        html: span,
+        iconSize: null,
+        popupAnchor: [0, -12]
       }),
-      interactive: false,
-      keyboard: false
-    }).addTo(map);
+      title: place.name
+    })
+      .bindPopup(createPopup('place', place))
+      .addTo(map);
   }
 
-  PLACES.forEach(function(place) {
-    addLabel(place.coords, '' + place.name);
-  });
+  PLACES.forEach(addPlace);
 
-  // ---------- Опасные зоны на карте ----------
+  function addAnomaly(anomaly) {
+    var img = document.createElement('img');
+    img.className = 'anomaly-marker__image';
+    img.src = 'img/anomaly.svg';
+    img.alt = '';
+
+    return L.marker(anomaly.coords, {
+      icon: L.divIcon({
+        className: 'anomaly-marker',
+        html: img,
+        iconSize: [ANOMALY_ICON_SIZE, ANOMALY_ICON_SIZE],
+        iconAnchor: [ANOMALY_ICON_SIZE / 2, ANOMALY_ICON_SIZE / 2],
+        popupAnchor: [0, -ANOMALY_ICON_SIZE / 2]
+      }),
+      title: anomaly.name
+    })
+      .bindPopup(createPopup('anomaly', anomaly))
+      .addTo(map);
+  }
+
+  ANOMALIES.forEach(addAnomaly);
 
   function addDangerZone(zone) {
     var showName = zone.showName !== false && Boolean(zone.name);
@@ -178,6 +224,7 @@
       return null;
     }
 
+    var isRed = zone.color === 'red';
     var body = document.createElement('div');
     body.className = 'danger-zone__body';
 
@@ -189,7 +236,6 @@
       img.width = DANGER_ZONE_ICON_SIZE;
       img.height = DANGER_ZONE_ICON_SIZE;
       body.appendChild(img);
-      // Центр картинки — ровно в точке зоны, надпись висит под ней
       body.style.marginTop = -(DANGER_ZONE_ICON_SIZE / 2) + 'px';
     } else {
       body.classList.add('danger-zone__body--text-only');
@@ -201,19 +247,18 @@
 
     return L.marker(zone.coords, {
       icon: L.divIcon({
-        className: 'danger-zone danger-zone--' + (zone.color === 'red' ? 'red' : 'yellow'),
+        className: 'danger-zone danger-zone--' + (isRed ? 'red' : 'yellow'),
         html: body,
-        iconSize: null
+        iconSize: null,
+        popupAnchor: [0, zone.image ? -DANGER_ZONE_ICON_SIZE / 2 : -12]
       }),
-      interactive: false,
-      keyboard: false
-    }).addTo(map);
+      title: zone.name || ''
+    })
+      .bindPopup(createPopup('radiation', zone, isRed ? 'pda-popup--red' : ''))
+      .addTo(map);
   }
 
   DANGER_ZONES.forEach(addDangerZone);
-
-
-  // ---------- Интерфейс ----------
 
   var warningEl = document.getElementById('gps-warning');
   var warningTextEl = document.getElementById('gps-warning-text');
@@ -255,10 +300,6 @@
     });
   });
 
-  // ---------- Геолокация игрока ----------
-
-  // divIcon с вложенной картинкой: transform самого маркера занят Leaflet под позиционирование,
-  // поэтому вращаем внутренний <img>
   var playerIcon = L.divIcon({
     className: 'player-marker',
     html: '<img class="player-marker__arrow" src="img/player.png" alt="">',
@@ -307,28 +348,28 @@
       accuracyCircle.setRadius(accuracy * ACCURACY_CIRCLE_SCALE);
     }
 
-    // Нет компаса — разворачиваем стрелку по курсу движения из GPS (он есть только на ходу)
     if (!compassActive && course !== null && !isNaN(course) && speed > MIN_SPEED_FOR_COURSE) {
       applyHeading(course);
     }
 
-    inDangerZone = getNearestDangerDistance(latlng) < DANGER_ZONE_DISTANCE;
+    inDangerZone = getNearestDistance(DANGER_ZONES, latlng) < DANGER_ZONE_DISTANCE;
     updateGeiger();
+
+    setDetectorInterval(getDetectorInterval(getNearestDistance(ARTIFACTS, latlng)));
 
     hideWarning();
     setStatus('GPS: ' + formatCoords(latlng[0], latlng[1]) + ' | ±' + Math.round(accuracy) + ' м');
   }
 
   function onPositionError(err) {
-    // Таймаут при уже известной позиции — не тревожим игрока, просто ждём новых данных
     if (err && err.code === err.TIMEOUT && playerMarker) {
       setStatus('GPS: слабый сигнал…');
       return;
     }
 
-    // Позиция потеряна — не оставляем счётчик трещать бесконечно
     inDangerZone = false;
     updateGeiger();
+    setDetectorInterval(null);
 
     showWarning();
     setStatus('GPS: нет сигнала');
@@ -336,23 +377,16 @@
       locateBtn.classList.add('is-unavailable');
     }
 
-    // При запрете доступа повторных попыток не будет — сворачиваем слежение
     if (err && err.code === err.PERMISSION_DENIED && watchId !== null) {
       navigator.geolocation.clearWatch(watchId);
       watchId = null;
     }
   }
 
-  // ---------- Направление игрока (компас / курс GPS) ----------
-
-  var PLAYER_ICON_HEADING = 90;   // куда смотрит стрелка на player.png: 0 — вверх, 90 — вправо
-  var MIN_SPEED_FOR_COURSE = 1;   // м/с; медленнее курс GPS скачет случайно
-
   var compassActive = false;
   var lastHeading = null;
   var currentRotation = null;
 
-  // heading — градусы от севера по часовой стрелке
   function applyHeading(heading) {
     lastHeading = heading;
     if (!playerArrowEl) {
@@ -363,7 +397,6 @@
     if (currentRotation === null) {
       currentRotation = target;
     } else {
-      // Крутим по кратчайшей дуге, чтобы на переходе 359° → 0° стрелка не делала полный оборот
       var delta = ((target - currentRotation) % 360 + 540) % 360 - 180;
       if (Math.abs(delta) < 1) {
         return;
@@ -384,9 +417,9 @@
     var heading = null;
 
     if (typeof e.webkitCompassHeading === 'number' && !isNaN(e.webkitCompassHeading)) {
-      heading = e.webkitCompassHeading;          // iOS: уже от севера по часовой
+      heading = e.webkitCompassHeading;
     } else if (e.absolute && typeof e.alpha === 'number') {
-      heading = 360 - e.alpha;                   // Android: alpha идёт против часовой
+      heading = 360 - e.alpha;
     }
 
     if (heading === null) {
@@ -405,7 +438,6 @@
     }
   }
 
-  // iOS 13+ выдаёт компас только после явного разрешения, и спросить можно лишь по касанию
   if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
     var compassAsked = false;
     var askCompass = function () {
@@ -430,18 +462,16 @@
     startCompass();
   }
 
-  // ---------- Опасные зоны и счётчик Гейгера ----------
-
   var geiger = new Audio('geiger.mp3');
   geiger.loop = true;
   geiger.preload = 'auto';
 
   var inDangerZone = false;
 
-  function getNearestDangerDistance(latlng) {
+  function getNearestDistance(items, latlng) {
     var nearest = Infinity;
-    DANGER_ZONES.forEach(function (zone) {
-      nearest = Math.min(nearest, map.distance(latlng, zone.coords));
+    items.forEach(function (item) {
+      nearest = Math.min(nearest, map.distance(latlng, item.coords));
     });
     return nearest;
   }
@@ -449,7 +479,6 @@
   function updateGeiger() {
     if (inDangerZone) {
       if (geiger.paused) {
-        // До первого касания экрана браузер звук не пустит — тогда его включит unlockAudio
         geiger.play().catch(function () {});
       }
     } else if (!geiger.paused) {
@@ -458,8 +487,6 @@
     }
   }
 
-  // Браузеры запрещают звук без действия пользователя, поэтому на первом касании
-  // беззвучно запускаем плеер — после этого его можно включать из кода
   function unlockAudio() {
     geiger.muted = true;
     geiger.play()
@@ -480,7 +507,111 @@
   document.addEventListener('click', unlockAudio, true);
   document.addEventListener('touchend', unlockAudio, true);
 
-  // ---------- Запуск GPS ----------
+  if (navigator.audioSession) {
+    navigator.audioSession.type = 'playback';
+  }
+
+  var AudioContextClass = window.AudioContext || window.webkitAudioContext;
+  var audioCtx = AudioContextClass ? new AudioContextClass() : null;
+  var beepBuffer = null;
+  var detectorInterval = null;
+  var detectorTimer = null;
+  var detectorLoop = null;
+
+  if (audioCtx) {
+    fetch('beep.mp3')
+      .then(function (response) {
+        return response.arrayBuffer();
+      })
+      .then(function (data) {
+        return audioCtx.decodeAudioData(data);
+      })
+      .then(function (buffer) {
+        beepBuffer = buffer;
+        startDetector();
+      })
+      .catch(function () {});
+  }
+
+  function resumeAudioContext() {
+    if (audioCtx && audioCtx.state !== 'running') {
+      audioCtx.resume().then(startDetector).catch(function () {});
+    }
+  }
+
+  document.addEventListener('click', resumeAudioContext, true);
+  document.addEventListener('touchend', resumeAudioContext, true);
+
+  function getDetectorInterval(distance) {
+    for (var i = 0; i < DETECTOR_LEVELS.length; i++) {
+      if (distance < DETECTOR_LEVELS[i].distance) {
+        return DETECTOR_LEVELS[i].interval;
+      }
+    }
+    return null;
+  }
+
+  function playBeep(length, loop) {
+    if (!beepBuffer || audioCtx.state !== 'running') {
+      return null;
+    }
+
+    var now = audioCtx.currentTime;
+    var gain = audioCtx.createGain();
+    gain.gain.setValueAtTime(DETECTOR_VOLUME, now);
+    gain.connect(audioCtx.destination);
+
+    var source = audioCtx.createBufferSource();
+    source.buffer = beepBuffer;
+    source.loop = loop;
+    source.connect(gain);
+    source.start(now);
+
+    if (!loop) {
+      var end = now + Math.min(length, beepBuffer.duration);
+      gain.gain.setValueAtTime(DETECTOR_VOLUME, end - 0.015);
+      gain.gain.linearRampToValueAtTime(0, end);
+      source.stop(end);
+    }
+
+    return source;
+  }
+
+  function stopDetector() {
+    clearInterval(detectorTimer);
+    detectorTimer = null;
+    if (detectorLoop) {
+      detectorLoop.stop();
+      detectorLoop = null;
+    }
+  }
+
+  function startDetector() {
+    stopDetector();
+
+    if (detectorInterval === null) {
+      return;
+    }
+
+    if (detectorInterval === 0) {
+      detectorLoop = playBeep(0, true);
+      return;
+    }
+
+    var beepLength = detectorInterval * 0.6 / 1000;
+    playBeep(beepLength, false);
+    detectorTimer = setInterval(function () {
+      playBeep(beepLength, false);
+    }, detectorInterval);
+  }
+
+  function setDetectorInterval(interval) {
+    if (interval === detectorInterval) {
+      return;
+    }
+    detectorInterval = interval;
+    startDetector();
+  }
 
   var watchId = null;
 
