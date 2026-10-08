@@ -549,7 +549,7 @@ body {
   will-change: transform;
 }
 
-/* ---------- Эффекты: помехи радиации и волны детектора ---------- */
+/* ---------- Эффекты: помехи аномалии и волны детектора ---------- */
 
 .fx {
   position: fixed;
@@ -568,7 +568,7 @@ body {
   transition: opacity 0.4s;
 }
 
-body.fx-radiation .fx-noise {
+body.fx-anomaly .fx-noise {
   opacity: 0.4;
   animation: fx-noise 0.3s steps(4) infinite;
 }
@@ -595,19 +595,19 @@ body.fx-radiation .fx-noise {
   box-shadow: 0 0 6px rgba(0, 255, 102, 0.35);
 }
 
-body.fx-radiation .fx-tear {
+body.fx-anomaly .fx-tear {
   opacity: 1;
 }
 
-body.fx-radiation .fx-tear::before {
+body.fx-anomaly .fx-tear::before {
   animation: fx-tear-a 2.3s steps(1) infinite;
 }
 
-body.fx-radiation .fx-tear::after {
+body.fx-anomaly .fx-tear::after {
   animation: fx-tear-b 3.1s steps(1) infinite;
 }
 
-body.fx-radiation .leaflet-tile-pane {
+body.fx-anomaly .leaflet-tile-pane {
   animation: fx-jitter 1.7s steps(1) infinite;
 }
 
@@ -672,10 +672,10 @@ body.fx-radiation .leaflet-tile-pane {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  body.fx-radiation .fx-noise,
-  body.fx-radiation .fx-tear::before,
-  body.fx-radiation .fx-tear::after,
-  body.fx-radiation .leaflet-tile-pane {
+  body.fx-anomaly .fx-noise,
+  body.fx-anomaly .fx-tear::before,
+  body.fx-anomaly .fx-tear::after,
+  body.fx-anomaly .leaflet-tile-pane {
     animation: none;
   }
 

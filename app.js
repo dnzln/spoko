@@ -35,8 +35,8 @@
       coords: [50.37381, 30.47999]
     },
     {
-      name: 'Оранжерея «Пекучий пух»',
-      description: 'Скляний купол, зарослий дивною рослинністю. Пух у повітрі обпікає шкіру — не знімай протигаз.',
+      name: 'Дослідні теплиці',
+      description: 'До аварії тут виводили сорти, які б росли без світла і води. Після викиду експеримент вийшов з-під контролю: стебла розрослися, повибивали скло й, кажуть, ворушаться, коли на них не дивишся. Науковці досі платять за зразки — але самі сюди вже не ходять.',
       coords: [50.37602, 30.47211]
     },
     {
@@ -45,8 +45,8 @@
       coords: [50.37256, 30.46629]
     },
     {
-      name: 'Хата лісника',
-      description: 'Колись тут жив лісник. Після пожежі лишилися обвуглені стіни. Інколи тут зупиняються мандрівники, щоб перепочити, але довго залишатися не радять.',
+      name: 'Згарище',
+      description: 'Будинок, крізь який пройшла «Жарка». Вогонь згас за хвилину, а кіптява на стінах лишилася назавжди. Сталкери вірять: де «Жарка» вже була, вдруге вона не прийде — тож тут охоче перечікують ніч. Скільки ще протримається ця віра, ніхто не знає.',
       coords: [50.374946119000136, 30.470839378062863]
     },
     {
@@ -57,15 +57,25 @@
   ];
 
   const STASHES = [
-    {
-      name: 'Схованка в лісі',
-      description: 'Синя фарба на корі —\nто мої сліди старі.\nЙди стежиною лісною\nдо берези із сосною.\nТам, де пара та стоїть,\nза спиною схрон лежить.',
-      coords: [50.36898350189905, 30.471840525687643]
-    },
+    // {
+    //   name: 'Схованка в лісі',
+    //   description: 'Синя фарба на корі —\nто мої сліди старі.\nЙди стежиною лісною\nдо берези із сосною.\nТам, де пара та стоїть,\nза спиною схрон лежить.',
+    //   coords: [50.36898350189905, 30.471840525687643]
+    // },
     {
       name: 'Скинутий хабар',
-      description: 'Писав на бігу. "Долг" сів на хвіст біля «Полісся» — з усім хабаром не відірвався б. Південний вихід, де місток над висохлим руслом. Частину здобичі скинув під міст, на опору.',
-      coords: [50.369051090571084, 30.474616293626667]
+      description: 'Писав на бігу. Кровососи сіли на хвіст біля «Полісся» — з усім хабаром не відірвався б. Південний вихід, де місток над висохлим руслом. Частину здобичі скинув під міст, на опору.',
+      coords: [50.36902644676543, 30.474615515282725]
+    },
+    {
+      name: 'Неотримана посилка',
+      description: 'Повідомлення для кур’єра, перехоплене на загальній частоті: «Замовник не дожив до зустрічі. Посилку залишив на Згарищі — у вікні з тильного боку. Платити вже нікому, тож хто перший дійде, того й хабар».',
+      coords: [50.37473628573716, 30.470796021750896]
+    },
+    {
+      name: 'Скляна схованка',
+      description: 'Бармен продав координати за пляшку: «Хтось із вільних сховав хабар у дослідних теплицях. Рослини там дивні — шукай швидко й нічого не чіпай голими руками. Де саме — не знаю. Знав би — взяв би дорожче».',
+      coords: [50.375614384886944, 30.471739166885882]
     }
   ];
 
@@ -73,7 +83,21 @@
     {
       name: 'Поле Шепоту',
       description: 'Звичайне на вигляд поле, де трава шелестить навіть без вітру. Десь тут лежить артефакт — але без детектора його не знайти. Увімкни КПК і слухай: він подасть сигнал, коли будеш поруч.',
-      coords: [50.372638007141155, 30.472695628852165]
+      // coords: [50.37261549150148, 30.47268730475368],
+      coords: [50.373092000918454, 30.470741435536123],
+      isShown: false,
+      // area: [
+      //   [50.37179037632967, 30.471356248075683],
+      //   [50.37382160780068, 30.472227661305737],
+      //   [50.373469827047394, 30.47409250043743],
+      //   [50.37144703709725, 30.473186346211467]
+      // ]
+      area: [
+        [50.372097879527225, 30.469501869938185],
+        [50.37434791012629, 30.47058842266954],
+        [50.37412346854973, 30.472015637224484],
+        [50.371875876986515, 30.470964777192588]
+      ]
     }
   ];
 
@@ -81,7 +105,8 @@
     {
       id: 'artifact-1',
       name: 'Артефакт',
-      coords: [50.372527774499154, 30.470685237475667]
+      coords: [50.372527774499154, 30.470685237475667],
+      isShown: false
     },
   ];
 
@@ -95,17 +120,24 @@
     },
     {
       name: 'Тепла стіна',
-      description: 'Кам’яна стіна посеред лісу — від будинку, якого вже немає. Кажуть, під час викиду вона прийняла удар на себе й досі фонить. Каміння тепле навіть узимку — руками не чіпай.',
+      description: 'Кам’яна стіна посеред лісу — від будинку, якого вже немає. Кажуть, під час викиду вона прийняла удар на себе й досі фонить. Каміння це буває тепле навіть узимку.',
       coords: [50.36951555276578, 30.470651952451625],
       image: 'img/rad.webp',
       showName: false
     },
     {
       name: 'Будка Бюрера',
-      description: 'Бетонна коробка без вікон, схожа на маленький саркофаг. По ночах звідти чути сильний храп, але на людину не схоже.',
-      coords: [50.37194851311824, 30.469461228030625],
+      description: 'Бетонна коробка без вікон — ідеальне лігво для бюрера: темно, тісно й ніхто не турбує. Ті, хто підходив ближче, розповідали, що зброя сама вислизала з рук, а камінці під ногами злітали в повітря. Фонить тут теж добряче. Проходь мимо — і не стукай.',
+      coords: [50.37206305806518, 30.469541009108866],
       image: 'img/rad.webp',
       showName: false
+    },
+    {
+      name: 'Скловир',
+      kicker: '✦ Аномалія',
+      description: 'Уламки скла висять у повітрі й повільно кружляють, ловлячи світло. Тут рій уже осів на дорогу — але досить необережного кроку, щоб він знову піднявся. Іди повільно й дивись під ноги: скло хрумтить, а ріже по-справжньому.',
+      coords: [50.375651358188016, 30.471234259121847],
+      color: 'red'
     }
   ];
 
@@ -124,11 +156,12 @@
   var DETECTOR_CONTINUOUS_DISTANCE = 3;
   var DETECTOR_SMOOTHING = 0.5;
   var DETECTOR_CURVE = [
-    { distance: 3, interval: 200 },
+    { distance: 3, interval: 150 },
     { distance: 5, interval: 300 },
     { distance: 10, interval: 650 },
     { distance: 15, interval: 1100 },
-    { distance: 25, interval: 2000 }
+    { distance: 25, interval: 2000 },
+    // { distance: 35, interval: 3500 }
   ];
 
   var map = L.map('map', {
@@ -158,7 +191,7 @@
 
   function createPopup(type, item, extraClass) {
     var content = document.createElement('div');
-    content.appendChild(createElement('div', 'pda-popup__kicker', POPUP_KICKERS[type]));
+    content.appendChild(createElement('div', 'pda-popup__kicker', item.kicker || POPUP_KICKERS[type]));
     content.appendChild(createElement('h3', 'pda-popup__title', item.name || 'Без назви'));
     if (item.description) {
       content.appendChild(createElement('p', 'pda-popup__text', item.description));
@@ -228,6 +261,54 @@
   }
 
   ANOMALIES.forEach(addAnomaly);
+
+  function showAnomalyArea(anomaly) {
+    if (!anomaly.isShown || !anomaly.area) {
+      return null;
+    }
+
+    return L.polygon(anomaly.area, {
+      color: '#b388ff',
+      weight: 2,
+      dashArray: '8 6',
+      fillColor: '#b388ff',
+      fillOpacity: 0.08,
+      interactive: false
+    }).addTo(map);
+  }
+
+  function showArtifact(artifact) {
+    if (!artifact.isShown) {
+      return null;
+    }
+
+    L.circle(artifact.coords, {
+      radius: DETECTOR_CURVE[DETECTOR_CURVE.length - 1].distance,
+      color: '#66ffff',
+      weight: 1,
+      dashArray: '4 6',
+      fill: false,
+      interactive: false
+    }).addTo(map);
+
+    return L.circleMarker(artifact.coords, {
+      radius: 6,
+      color: '#000',
+      weight: 2,
+      fillColor: '#66ffff',
+      fillOpacity: 1
+    })
+      .bindPopup(createPopup('anomaly', {
+        kicker: '◆ Артефакт · тест',
+        name: artifact.name,
+        description: 'id: ' + artifact.id,
+        coords: artifact.coords
+      }))
+      .addTo(map);
+  }
+
+  ANOMALIES.forEach(showAnomalyArea);
+  ARTIFACTS.forEach(showArtifact);
 
   function addDangerZone(zone) {
     var showName = zone.showName !== false && Boolean(zone.name);
@@ -366,6 +447,11 @@
     inDangerZone = getNearestDistance(DANGER_ZONES, latlng) < DANGER_ZONE_DISTANCE;
     updateGeiger();
 
+    inAnomaly = ANOMALIES.some(function (anomaly) {
+      return anomaly.area && isInsideArea(latlng, anomaly.area);
+    });
+    updateAnomalyEffects();
+
     updateDetector(latlng);
 
     hideWarning();
@@ -380,6 +466,8 @@
 
     inDangerZone = false;
     updateGeiger();
+    inAnomaly = false;
+    updateAnomalyEffects();
     resetDetector();
 
     showWarning();
@@ -477,7 +565,44 @@
   geiger.loop = true;
   geiger.preload = 'auto';
 
+  var whispers = new Audio('whispers.mp3');
+  whispers.loop = true;
+  whispers.preload = 'none';
+
   var inDangerZone = false;
+  var inAnomaly = false;
+
+  function isInsideArea(latlng, area) {
+    var lat = latlng[0];
+    var lng = latlng[1];
+    var inside = false;
+
+    for (var i = 0, j = area.length - 1; i < area.length; j = i++) {
+      var latI = area[i][0];
+      var lngI = area[i][1];
+      var latJ = area[j][0];
+      var lngJ = area[j][1];
+
+      if ((latI > lat) !== (latJ > lat) &&
+        lng < (lngJ - lngI) * (lat - latI) / (latJ - latI) + lngI) {
+        inside = !inside;
+      }
+    }
+
+    return inside;
+  }
+
+  function updateAnomalyEffects() {
+    document.body.classList.toggle('fx-anomaly', inAnomaly);
+
+    if (inAnomaly) {
+      if (whispers.paused) {
+        whispers.play().catch(function () {});
+      }
+    } else if (!whispers.paused) {
+      whispers.pause();
+    }
+  }
 
   function getNearestDistance(items, latlng) {
     var nearest = Infinity;
@@ -488,8 +613,6 @@
   }
 
   function updateGeiger() {
-    document.body.classList.toggle('fx-radiation', inDangerZone);
-
     if (inDangerZone) {
       if (geiger.paused) {
         geiger.play().catch(function () {});
@@ -500,21 +623,31 @@
     }
   }
 
-  function unlockAudio() {
-    geiger.muted = true;
-    geiger.play()
+  function unlockSound(sound, isActive) {
+    sound.muted = true;
+    return sound.play()
       .then(function () {
-        geiger.muted = false;
-        document.removeEventListener('click', unlockAudio, true);
-        document.removeEventListener('touchend', unlockAudio, true);
-        if (!inDangerZone) {
-          geiger.pause();
-          geiger.currentTime = 0;
+        sound.muted = false;
+        if (!isActive()) {
+          sound.pause();
         }
       })
-      .catch(function () {
-        geiger.muted = false;
+      .catch(function (err) {
+        sound.muted = false;
+        throw err;
       });
+  }
+
+  function unlockAudio() {
+    Promise.all([
+      unlockSound(geiger, function () { return inDangerZone; }),
+      unlockSound(whispers, function () { return inAnomaly; })
+    ])
+      .then(function () {
+        document.removeEventListener('click', unlockAudio, true);
+        document.removeEventListener('touchend', unlockAudio, true);
+      })
+      .catch(function () {});
   }
 
   document.addEventListener('click', unlockAudio, true);
