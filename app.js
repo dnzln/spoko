@@ -85,7 +85,6 @@
       description: 'Звичайне на вигляд поле, де трава шелестить навіть без вітру. Десь тут лежить артефакт — але без детектора його не знайти. Увімкни КПК і слухай: він подасть сигнал, коли будеш поруч.',
       // coords: [50.37261549150148, 30.47268730475368],
       coords: [50.373092000918454, 30.470741435536123],
-      isShown: false,
       // area: [
       //   [50.37179037632967, 30.471356248075683],
       //   [50.37382160780068, 30.472227661305737],
@@ -101,14 +100,10 @@
     }
   ];
 
-  const ARTIFACTS = [
-    {
-      id: 'artifact-1',
-      name: 'Артефакт',
-      coords: [50.372527774499154, 30.470685237475667],
-      isShown: false
-    },
-  ];
+  const ARTIFACT = {
+    name: 'Артефакт',
+    coords: [50.372527774499154, 30.470685237475667]
+  };
 
   const DANGER_ZONES = [
     {
@@ -155,14 +150,26 @@
   var DETECTOR_VOLUME = 0.8;
   var DETECTOR_CONTINUOUS_DISTANCE = 3;
   var DETECTOR_SMOOTHING = 0.5;
-  var DETECTOR_CURVE = [
+  var DETECTOR_BASE_CURVE = [
     { distance: 3, interval: 150 },
     { distance: 5, interval: 300 },
     { distance: 10, interval: 650 },
     { distance: 15, interval: 1100 },
-    { distance: 25, interval: 2000 },
-    // { distance: 35, interval: 3500 }
+    { distance: 25, interval: 2000 }
   ];
+  var DETECTOR_CURVES = {
+    25: DETECTOR_BASE_CURVE,
+    35: DETECTOR_BASE_CURVE.concat([
+      { distance: 35, interval: 3500 }
+    ]),
+    50: DETECTOR_BASE_CURVE.concat([
+      { distance: 35, interval: 3500 }, 
+      { distance: 50, interval: 4000 }
+    ])
+  };
+  var DETECTOR_RANGE_DEFAULT = 25;
+  var REMOTE_STATE_TTL_HOURS = 12;
+  var REMOTE_MAX_DISTANCE_KM = 5;
 
   var map = L.map('map', {
     center: MAP_CENTER,
@@ -261,54 +268,6 @@
   }
 
   ANOMALIES.forEach(addAnomaly);
-
-  function showAnomalyArea(anomaly) {
-    if (!anomaly.isShown || !anomaly.area) {
-      return null;
-    }
-
-    return L.polygon(anomaly.area, {
-      color: '#b388ff',
-      weight: 2,
-      dashArray: '8 6',
-      fillColor: '#b388ff',
-      fillOpacity: 0.08,
-      interactive: false
-    }).addTo(map);
-  }
-
-  function showArtifact(artifact) {
-    if (!artifact.isShown) {
-      return null;
-    }
-
-    L.circle(artifact.coords, {
-      radius: DETECTOR_CURVE[DETECTOR_CURVE.length - 1].distance,
-      color: '#66ffff',
-      weight: 1,
-      dashArray: '4 6',
-      fill: false,
-      interactive: false
-    }).addTo(map);
-
-    return L.circleMarker(artifact.coords, {
-      radius: 6,
-      color: '#000',
-      weight: 2,
-      fillColor: '#66ffff',
-      fillOpacity: 1
-    })
-      .bindPopup(createPopup('anomaly', {
-        kicker: '◆ Артефакт · тест',
-        name: artifact.name,
-        description: 'id: ' + artifact.id,
-        coords: artifact.coords
-      }))
-      .addTo(map);
-  }
-
-  ANOMALIES.forEach(showAnomalyArea);
-  ARTIFACTS.forEach(showArtifact);
 
   function addDangerZone(zone) {
     var showName = zone.showName !== false && Boolean(zone.name);
@@ -666,7 +625,6 @@
   var lastBeepAt = 0;
   var smoothedArtifactDistance = null;
   var lastPlayerLatLng = null;
-  var foundArtifacts = {};
 
   if (audioCtx) {
     fetch('beep.mp3')
@@ -692,8 +650,13 @@
   document.addEventListener('click', resumeAudioContext, true);
   document.addEventListener('touchend', resumeAudioContext, true);
 
+  function getDetectorCurve() {
+    return DETECTOR_CURVES[remoteState.range] || DETECTOR_CURVES[DETECTOR_RANGE_DEFAULT];
+  }
+
   function getDetectorInterval(distance) {
-    var last = DETECTOR_CURVE[DETECTOR_CURVE.length - 1];
+    var curve = getDetectorCurve();
+    var last = curve[curve.length - 1];
 
     if (distance < DETECTOR_CONTINUOUS_DISTANCE) {
       return 0;
@@ -702,9 +665,9 @@
       return null;
     }
 
-    for (var i = 1; i < DETECTOR_CURVE.length; i++) {
-      var from = DETECTOR_CURVE[i - 1];
-      var to = DETECTOR_CURVE[i];
+    for (var i = 1; i < curve.length; i++) {
+      var from = curve[i - 1];
+      var to = curve[i];
       if (distance <= to.distance) {
         var t = Math.max(0, (distance - from.distance) / (to.distance - from.distance));
         return Math.round(from.interval + t * (to.interval - from.interval));
@@ -713,10 +676,12 @@
     return last.interval;
   }
 
+  function getArtifactCoords() {
+    return remoteState.moved || ARTIFACT.coords;
+  }
+
   function getActiveArtifacts() {
-    return ARTIFACTS.filter(function (artifact) {
-      return !foundArtifacts[artifact.id];
-    });
+    return remoteState.found ? [] : [{ coords: getArtifactCoords() }];
   }
 
   function updateDetector(latlng) {
@@ -864,48 +829,281 @@
     }
   }
 
-  function handleRemoteCommand(text) {
-    var command = text.trim().toLowerCase();
+  function createDefaultState() {
+    return { found: false, moved: null, show: false, range: DETECTOR_RANGE_DEFAULT };
+  }
 
-    if (command === 'reset') {
-      foundArtifacts = {};
-    } else if (ARTIFACTS.some(function (artifact) { return artifact.id === command; })) {
-      foundArtifacts[command] = true;
-    } else {
+  function cloneState(state) {
+    return JSON.parse(JSON.stringify(state));
+  }
+
+  function isNearArtifact(coords) {
+    return isFinite(coords[0]) && isFinite(coords[1]) &&
+      Math.abs(coords[0]) <= 90 && Math.abs(coords[1]) <= 180 &&
+      map.distance(coords, ARTIFACT.coords) <= REMOTE_MAX_DISTANCE_KM * 1000;
+  }
+
+  function getCoordCandidates(text) {
+    var candidates = [];
+    var dotted = text.match(/-?\d+\.\d+/g) || [];
+    var comma = text.match(/-?\d+,\d+/g) || [];
+
+    if (dotted.length === 2) {
+      candidates.push([Number(dotted[0]), Number(dotted[1])]);
+    }
+
+    if (comma.length === 2 && dotted.length === 0) {
+      candidates.push(comma.map(function (n) { return Number(n.replace(',', '.')); }));
+    }
+
+    var glued = text.replace(/[^\d.]/g, '');
+    var firstDot = glued.indexOf('.');
+    var secondDot = glued.indexOf('.', firstDot + 1);
+    if (dotted.length < 2 && firstDot > 0 && secondDot > firstDot && glued.indexOf('.', secondDot + 1) === -1) {
+      [ARTIFACT.coords[1], ARTIFACT.coords[0]].forEach(function (reference) {
+        var intDigits = String(Math.trunc(Math.abs(reference))).length;
+        var split = secondDot - intDigits;
+        if (split > firstDot + 1) {
+          candidates.push([Number(glued.slice(0, split)), Number(glued.slice(split))]);
+        }
+      });
+    }
+
+    return candidates;
+  }
+
+  function parseCoords(text) {
+    var candidates = getCoordCandidates(text);
+
+    for (var i = 0; i < candidates.length; i++) {
+      var coords = candidates[i];
+      if (isNearArtifact(coords)) {
+        return coords;
+      }
+      if (isNearArtifact([coords[1], coords[0]])) {
+        return [coords[1], coords[0]];
+      }
+    }
+    return null;
+  }
+
+  function applyCommand(state, text) {
+    var raw = String(text).trim();
+    var command = raw.toLowerCase().replace(/\s+/g, '');
+
+    switch (command) {
+      case 'found':
+      case 'artifact-1':
+        state.found = true;
+        return 'артефакт знайдено';
+
+      case 'active':
+        state.found = false;
+        return 'артефакт знову активний';
+
+      case 'show':
+        state.show = true;
+        return 'тестове відображення увімкнено';
+
+      case 'hide':
+        state.show = false;
+        return 'тестове відображення вимкнено';
+
+      case 'range25':
+      case 'range35':
+      case 'range50':
+        state.range = Number(command.slice(5));
+        return 'радіус детектора ' + state.range + ' м';
+
+      case 'reset':
+      case 'resetall':
+        var fresh = createDefaultState();
+        Object.keys(fresh).forEach(function (key) { state[key] = fresh[key]; });
+        return 'усі налаштування за замовчуванням';
+    }
+
+    var coords = parseCoords(raw);
+    if (coords) {
+      state.moved = coords;
+      return 'артефакт переміщено: ' + coords[0].toFixed(6) + ', ' + coords[1].toFixed(6);
+    }
+
+    return null;
+  }
+
+  var remoteState = createDefaultState();
+  var debugLayer = L.layerGroup().addTo(map);
+
+  function renderDebug() {
+    debugLayer.clearLayers();
+
+    if (!remoteState.show) {
       return;
     }
 
+    ANOMALIES.forEach(function (anomaly) {
+      if (!anomaly.area) {
+        return;
+      }
+      L.polygon(anomaly.area, {
+        color: '#b388ff',
+        weight: 2,
+        dashArray: '8 6',
+        fillColor: '#b388ff',
+        fillOpacity: 0.08,
+        interactive: false
+      }).addTo(debugLayer);
+    });
+
+    var curve = getDetectorCurve();
+    var radius = curve[curve.length - 1].distance;
+    var coords = getArtifactCoords();
+    var color = remoteState.found ? '#777777' : '#66ffff';
+
+    L.circle(coords, {
+      radius: radius,
+      color: color,
+      weight: 1,
+      dashArray: '4 6',
+      fill: false,
+      interactive: false
+    }).addTo(debugLayer);
+
+    L.marker([coords[0] + radius / 111320, coords[1]], {
+      icon: L.divIcon({
+        className: 'debug-label',
+        html: '<span style="color:' + color + '">' + radius + ' м</span>',
+        iconSize: null
+      }),
+      interactive: false,
+      keyboard: false
+    }).addTo(debugLayer);
+
+    L.circleMarker(coords, {
+      radius: 6,
+      color: '#000',
+      weight: 2,
+      fillColor: color,
+      fillOpacity: 1
+    })
+      .bindPopup(createPopup('anomaly', {
+        kicker: '◆ Артефакт · тест',
+        name: ARTIFACT.name,
+        description: 'радіус: ' + radius + ' м\nстатус: ' + (remoteState.found ? 'знайдено' : 'активний') +
+          (remoteState.moved ? '\nпозиція: передана з каналу' : '\nпозиція: з коду'),
+        coords: coords
+      }))
+      .addTo(debugLayer);
+  }
+
+  function refreshRemoteState() {
+    renderDebug();
     smoothedArtifactDistance = null;
     if (lastPlayerLatLng) {
       updateDetector(lastPlayerLatLng);
     }
   }
 
-  var remoteSource = null;
+  var toastEl = document.getElementById('pda-toast');
+  var toastTimer = null;
 
-  function listenRemoteCommands() {
-    if (!window.EventSource) {
-      return;
+  function showToast(text) {
+    toastEl.textContent = 'КПК: ' + text;
+    toastEl.hidden = false;
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () {
+      toastEl.hidden = true;
+    }, 3500);
+  }
+
+  var ntfyUrl = 'https://ntfy.sh/' + NTFY_TOPIC;
+  var remoteSource = null;
+  var remoteConnecting = false;
+
+  function syncRemoteState() {
+    var startedAt = Math.floor(Date.now() / 1000);
+
+    return fetch(ntfyUrl + '/json?poll=1&since=' + REMOTE_STATE_TTL_HOURS + 'h', { cache: 'no-store' })
+      .then(function (response) {
+        if (!response.ok) {
+          throw new Error('ntfy ' + response.status);
+        }
+        return response.text();
+      })
+      .then(function (body) {
+        var draft = createDefaultState();
+        var lastTime = startedAt;
+
+        body.split('\n').forEach(function (line) {
+          if (!line) {
+            return;
+          }
+          try {
+            var message = JSON.parse(line);
+            if (message.event === 'message' && typeof message.message === 'string') {
+              applyCommand(draft, message.message);
+              lastTime = Math.max(lastTime, message.time || 0);
+            }
+          } catch (err) {}
+        });
+
+        remoteState = draft;
+        refreshRemoteState();
+        return lastTime;
+      });
+  }
+
+  function openRemoteStream(since) {
+    if (remoteSource) {
+      remoteSource.close();
     }
 
-    remoteSource = new EventSource('https://ntfy.sh/' + NTFY_TOPIC + '/sse?since=12h');
+    remoteSource = new EventSource(ntfyUrl + '/sse?since=' + since);
     remoteSource.onmessage = function (event) {
       try {
-        var data = JSON.parse(event.data);
-        if (data.event === 'message' && typeof data.message === 'string') {
-          handleRemoteCommand(data.message);
+        var message = JSON.parse(event.data);
+        if (message.event !== 'message' || typeof message.message !== 'string') {
+          return;
+        }
+
+        var draft = cloneState(remoteState);
+        var result = applyCommand(draft, message.message);
+        remoteState = draft;
+        refreshRemoteState();
+
+        if (result && Date.now() / 1000 - (message.time || 0) < 60) {
+          showToast(result);
         }
       } catch (err) {}
     };
   }
 
+  function connectRemote() {
+    if (!window.EventSource || remoteConnecting) {
+      return;
+    }
+    remoteConnecting = true;
+
+    syncRemoteState()
+      .catch(function () {
+        return REMOTE_STATE_TTL_HOURS + 'h';
+      })
+      .then(function (since) {
+        openRemoteStream(since);
+        remoteConnecting = false;
+      });
+  }
+
   document.addEventListener('visibilitychange', function () {
-    if (document.visibilityState === 'visible' && remoteSource && remoteSource.readyState === EventSource.CLOSED) {
-      listenRemoteCommands();
+    if (document.visibilityState === 'visible' && (!remoteSource || remoteSource.readyState === EventSource.CLOSED)) {
+      connectRemote();
     }
   });
 
-  listenRemoteCommands();
+  window.addEventListener('online', connectRemote);
+
+  renderDebug();
+  connectRemote();
 
   var watchId = null;
 

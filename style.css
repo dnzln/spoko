@@ -156,6 +156,47 @@ body {
   animation: pda-pulse 1.2s steps(2) infinite;
 }
 
+/* ---------- Отладка: подпись радиуса артефакта ---------- */
+
+.debug-label span {
+  display: inline-block;
+  transform: translate(-50%, -100%);
+  padding: 1px 5px;
+  background: rgba(0, 0, 0, 0.75);
+  font-family: var(--pda-font);
+  font-size: 12px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+/* ---------- Подтверждение удалённой команды ---------- */
+
+.pda-toast {
+  position: fixed;
+  top: calc(64px + env(safe-area-inset-top));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1100;
+  max-width: calc(100vw - 32px);
+  padding: 8px 14px;
+  background: var(--pda-bg);
+  border: 1px solid var(--pda-green);
+  border-left-width: 4px;
+  color: var(--pda-green);
+  font-family: var(--pda-font);
+  font-size: 13px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  text-shadow: 0 0 6px rgba(0, 255, 102, 0.6);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.6);
+  pointer-events: none;
+  animation: pda-blink-in 0.4s steps(4) both;
+}
+
+.pda-toast[hidden] {
+  display: none;
+}
+
 /* ---------- Статус-строка ---------- */
 
 .pda-status {
